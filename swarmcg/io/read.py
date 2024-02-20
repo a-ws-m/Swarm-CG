@@ -1,14 +1,13 @@
 import re
 
 import MDAnalysis as mda
-
 from swarmcg import config
-from swarmcg.shared import exceptions, catch_warnings
-from swarmcg.shared import catch_warnings
+from swarmcg.shared import catch_warnings, exceptions
 
 
 @catch_warnings(
-    ImportWarning)  # ignore warning: "bootstrap.py:219: ImportWarning: can"t resolve package from __spec__ or __package__, falling back on __name__ and __path__"
+    ImportWarning
+)  # ignore warning: "bootstrap.py:219: ImportWarning: can"t resolve package from __spec__ or __package__, falling back on __name__ and __path__"
 def read_aa_traj(ns):
     """Read atomistic trajectory
 
@@ -16,9 +15,13 @@ def read_aa_traj(ns):
         aa_universe
     """
     print("Reading All Atom (AA) trajectory")
-    ns.aa_universe = mda.Universe(ns.aa_tpr_filename, ns.aa_traj_filename,
-                                  in_memory=True, refresh_offsets=True,
-                                  guess_bonds=False)  # setting guess_bonds=False disables angles, dihedrals and improper_dihedrals guessing, which is activated by default in some MDA versions
+    ns.aa_universe = mda.Universe(
+        ns.aa_tpr_filename,
+        ns.aa_traj_filename,
+        in_memory=True,
+        refresh_offsets=True,
+        guess_bonds=False,
+    )  # setting guess_bonds=False disables angles, dihedrals and improper_dihedrals guessing, which is activated by default in some MDA versions
     print("  Found", len(ns.aa_universe.trajectory), "frames")
 
 
@@ -41,9 +44,7 @@ def verify_handled_functions(geom, func, line_nb):
     try:
         func = int(func)
     except (ValueError, IndexError):
-        msg = (
-            f"Unexpected error while reading CG ITP file at line {line_nb}, please check this file."
-        )
+        msg = f"Unexpected error while reading CG ITP file at line {line_nb}, please check this file."
         raise exceptions.MissformattedFile(msg)
 
     if func not in config.handled_functions[geom]:
@@ -64,6 +65,7 @@ def verify_handled_functions(geom, func, line_nb):
 
 # TODO: the 3 next functions below (section_switch, vs_error_control, read_cg_itp_file) could be isolated in a sort of
 #       "topology reader" class, and next we would include the formats from other MD engines
+
 
 def section_switch(section_read, section_active):
     """Sections switch for reading ITP sections"""
@@ -128,9 +130,19 @@ def read_cg_itp_file(ns):
         default_max_fct_angles_opti_f1
     """
     print("Reading Coarse-Grained (CG) ITP file")
-    cg_itp = {"moleculetype": {"molname": "", "nrexcl": 0}, "atoms": [], "constraint": [],
-              "bond": [], "angle": [], "dihedral": [], "virtual_sites2": {},
-              "virtual_sites3": {}, "virtual_sites4": {}, "virtual_sitesn": {}, "exclusion": []}
+    cg_itp = {
+        "moleculetype": {"molname": "", "nrexcl": 0},
+        "atoms": [],
+        "constraint": [],
+        "bond": [],
+        "angle": [],
+        "dihedral": [],
+        "virtual_sites2": {},
+        "virtual_sites3": {},
+        "virtual_sites4": {},
+        "virtual_sitesn": {},
+        "exclusion": [],
+    }
     real_beads_ids, vs_beads_ids = [], []
     nb_constraints, nb_bonds, nb_angles, nb_dihedrals = -1, -1, -1, -1
 
@@ -147,7 +159,7 @@ def read_cg_itp_file(ns):
         "vs_3": False,
         "vs_4": False,
         "vs_n": False,
-        "exclusion": False
+        "exclusion": False,
     }
 
     def msg_force_boundaries(line, min_fct, max_fct, str_arg):
@@ -194,8 +206,10 @@ def read_cg_itp_file(ns):
 
                 if section_read["moleculetype"]:
 
-                    cg_itp["moleculetype"]["molname"], cg_itp["moleculetype"]["nrexcl"] = \
-                        sp_itp_line[0], int(sp_itp_line[1])
+                    (
+                        cg_itp["moleculetype"]["molname"],
+                        cg_itp["moleculetype"]["nrexcl"],
+                    ) = sp_itp_line[0], int(sp_itp_line[1])
 
                 elif section_read["atom"]:
 
@@ -203,7 +217,9 @@ def read_cg_itp_file(ns):
                     #       because most probably this won"t be OK -- Not sure who does this though, but seems possible
 
                     if len(sp_itp_line) == 7:
-                        bead_id, bead_type, resnr, residue, atom, cgnr, charge = sp_itp_line[:7]
+                        bead_id, bead_type, resnr, residue, atom, cgnr, charge = (
+                            sp_itp_line[:7]
+                        )
                         mass = None
 
                     # In case the masses are ABSENT in the ITP file (probably the most normal case with
@@ -217,8 +233,9 @@ def read_cg_itp_file(ns):
                     #    appropriate masses
 
                     elif len(sp_itp_line) == 8:
-                        bead_id, bead_type, resnr, residue, atom, cgnr, charge, mass = sp_itp_line[
-                                                                                       :8]
+                        bead_id, bead_type, resnr, residue, atom, cgnr, charge, mass = (
+                            sp_itp_line[:8]
+                        )
                         mass = float(mass)
                     else:
                         msg = (
@@ -237,9 +254,18 @@ def read_cg_itp_file(ns):
 
                     # assignment of the variables value
                     cg_itp["atoms"].append(
-                        {"bead_id": int(bead_id) - 1, "bead_type": bead_type, "resnr": int(resnr),
-                         "residue": residue, "atom": atom, "cgnr": int(cgnr),
-                         "charge": float(charge), "mass": mass, "vs_type": None})
+                        {
+                            "bead_id": int(bead_id) - 1,
+                            "bead_type": bead_type,
+                            "resnr": int(resnr),
+                            "residue": residue,
+                            "atom": atom,
+                            "cgnr": int(cgnr),
+                            "charge": float(charge),
+                            "mass": mass,
+                            "vs_type": None,
+                        }
+                    )
                     # here there is still MASS and VS_TYPE that are subject to later modification
 
                     if not len(cg_itp["atoms"]) == int(bead_id):
@@ -252,23 +278,33 @@ def read_cg_itp_file(ns):
                 elif section_read["constraint"]:
 
                     # beginning of a new group
-                    if itp_lines[i - 1] == "" or itp_lines[i - 1].startswith(";") or bool(
-                            re.search(r"\[.*constraint.*\]", itp_lines[i - 1])):
+                    if (
+                        itp_lines[i - 1] == ""
+                        or itp_lines[i - 1].startswith(";")
+                        or bool(re.search(r"\[.*constraint.*\]", itp_lines[i - 1]))
+                    ):
                         nb_constraints += 1
                         if itp_lines[i - 1].startswith("; constraint type"):
                             geom_type = itp_lines[i - 1].split()[
-                                3]  # if the current CG ITP was generated with our package
+                                3
+                            ]  # if the current CG ITP was generated with our package
 
                         else:
                             geom_type = str(len(cg_itp["constraint"]) + 1)
                         cg_itp["constraint"].append(
-                            {"geom_type": geom_type, "beads": [], "func": [], "value": [],
-                             "value_user": []})  # initialize storage for this new group
+                            {
+                                "geom_type": geom_type,
+                                "beads": [],
+                                "func": [],
+                                "value": [],
+                                "value_user": [],
+                            }
+                        )  # initialize storage for this new group
 
                     try:
                         cg_itp["constraint"][nb_constraints]["beads"].append(
-                            [int(bead_id) - 1 for bead_id in sp_itp_line[
-                                                             0:2]])  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
+                            [int(bead_id) - 1 for bead_id in sp_itp_line[0:2]]
+                        )  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
                     except ValueError:
                         msg = (
                             "Incorrect reading of the CG ITP file within [constraints] section.\n"
@@ -279,28 +315,43 @@ def read_cg_itp_file(ns):
                     func = verify_handled_functions("constraint", sp_itp_line[2], i + 1)
                     cg_itp["constraint"][nb_constraints]["func"].append(func)
                     cg_itp["constraint"][nb_constraints]["value"].append(
-                        float(sp_itp_line[3]))
+                        float(sp_itp_line[3])
+                    )
+                    cg_itp["constraint"][nb_constraints]["value_user"].append(
+                        float(sp_itp_line[3])
+                    )
 
                 elif section_read["bond"]:
 
                     # beginning of a new group
-                    if itp_lines[i - 1] == "" or itp_lines[i - 1].startswith(";") or bool(
-                            re.search(r"\[.*bond.*\]", itp_lines[i - 1])):
+                    if (
+                        itp_lines[i - 1] == ""
+                        or itp_lines[i - 1].startswith(";")
+                        or bool(re.search(r"\[.*bond.*\]", itp_lines[i - 1]))
+                    ):
                         nb_bonds += 1
                         if itp_lines[i - 1].startswith("; bond type"):
                             geom_type = itp_lines[i - 1].split()[
-                                3]  # if the current CG ITP was generated with our package
+                                3
+                            ]  # if the current CG ITP was generated with our package
                         else:
                             geom_type = str(len(cg_itp["bond"]) + 1)
                         cg_itp["bond"].append(
-                            {"geom_type": geom_type, "beads": [], "func": [], "value": [],
-                             "value_user": [], "fct": [],
-                             "fct_user": []})  # initialize storage for this new group
+                            {
+                                "geom_type": geom_type,
+                                "beads": [],
+                                "func": [],
+                                "value": [],
+                                "value_user": [],
+                                "fct": [],
+                                "fct_user": [],
+                            }
+                        )  # initialize storage for this new group
 
                     try:
                         cg_itp["bond"][nb_bonds]["beads"].append(
-                            [int(bead_id) - 1 for bead_id in sp_itp_line[
-                                                             0:2]])  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
+                            [int(bead_id) - 1 for bead_id in sp_itp_line[0:2]]
+                        )  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
                     except ValueError:
                         msg = (
                             "Incorrect reading of the CG ITP file within [bonds] section.\n"
@@ -315,32 +366,52 @@ def read_cg_itp_file(ns):
                     cg_itp["bond"][nb_bonds]["fct"].append(float(sp_itp_line[4]))
                     cg_itp["bond"][nb_bonds]["fct_user"].append(float(sp_itp_line[4]))
 
-                    if ns.user_input and not 0 <= float(
-                            sp_itp_line[4]) <= ns.default_max_fct_bonds_opti:
+                    if (
+                        ns.user_input
+                        and not 0
+                        <= float(sp_itp_line[4])
+                        <= ns.default_max_fct_bonds_opti
+                    ):
                         raise exceptions.MissformattedFile(
-                            msg_force_boundaries(i + 1, 0, ns.default_max_fct_bonds_opti,
-                                                 "-max_fct_bonds_f1"))
+                            msg_force_boundaries(
+                                i + 1,
+                                0,
+                                ns.default_max_fct_bonds_opti,
+                                "-max_fct_bonds_f1",
+                            )
+                        )
 
                 elif section_read["angle"]:
 
                     # beginning of a new group
-                    if itp_lines[i - 1] == "" or itp_lines[i - 1].startswith(";") or bool(
-                            re.search(r"\[.*angle.*\]", itp_lines[i - 1])):
+                    if (
+                        itp_lines[i - 1] == ""
+                        or itp_lines[i - 1].startswith(";")
+                        or bool(re.search(r"\[.*angle.*\]", itp_lines[i - 1]))
+                    ):
                         nb_angles += 1
                         if itp_lines[i - 1].startswith("; angle type"):
                             geom_type = itp_lines[i - 1].split()[
-                                3]  # if the current CG ITP was generated with our package
+                                3
+                            ]  # if the current CG ITP was generated with our package
                         else:
                             geom_type = str(len(cg_itp["angle"]) + 1)
                         cg_itp["angle"].append(
-                            {"geom_type": geom_type, "beads": [], "func": [], "value": [],
-                             "value_user": [], "fct": [],
-                             "fct_user": []})  # initialize storage for this new group
+                            {
+                                "geom_type": geom_type,
+                                "beads": [],
+                                "func": [],
+                                "value": [],
+                                "value_user": [],
+                                "fct": [],
+                                "fct_user": [],
+                            }
+                        )  # initialize storage for this new group
 
                     try:
                         cg_itp["angle"][nb_angles]["beads"].append(
-                            [int(bead_id) - 1 for bead_id in sp_itp_line[
-                                                             0:3]])  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
+                            [int(bead_id) - 1 for bead_id in sp_itp_line[0:3]]
+                        )  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
                     except ValueError:
                         msg = (
                             "Incorrect reading of the CG ITP file within [angles] section.\n"
@@ -351,42 +422,74 @@ def read_cg_itp_file(ns):
                     func = verify_handled_functions("angle", sp_itp_line[3], i + 1)
                     cg_itp["angle"][nb_angles]["func"].append(func)
                     cg_itp["angle"][nb_angles]["value"].append(float(sp_itp_line[4]))
-                    cg_itp["angle"][nb_angles]["value_user"].append(float(sp_itp_line[4]))
+                    cg_itp["angle"][nb_angles]["value_user"].append(
+                        float(sp_itp_line[4])
+                    )
                     cg_itp["angle"][nb_angles]["fct"].append(float(sp_itp_line[5]))
                     cg_itp["angle"][nb_angles]["fct_user"].append(float(sp_itp_line[5]))
 
                     if ns.user_input:
-                        if func == 1 and not 0 <= float(
-                                sp_itp_line[5]) <= ns.default_max_fct_angles_opti_f1:
+                        if (
+                            func == 1
+                            and not 0
+                            <= float(sp_itp_line[5])
+                            <= ns.default_max_fct_angles_opti_f1
+                        ):
                             raise exceptions.MissformattedFile(
-                                msg_force_boundaries(i + 1, 0, ns.default_max_fct_angles_opti_f1,
-                                                     "-max_fct_angles_f1"))
-                        elif func == 2 and not 0 <= float(
-                                sp_itp_line[5]) <= ns.default_max_fct_angles_opti_f2:
+                                msg_force_boundaries(
+                                    i + 1,
+                                    0,
+                                    ns.default_max_fct_angles_opti_f1,
+                                    "-max_fct_angles_f1",
+                                )
+                            )
+                        elif (
+                            func == 2
+                            and not 0
+                            <= float(sp_itp_line[5])
+                            <= ns.default_max_fct_angles_opti_f2
+                        ):
                             raise exceptions.MissformattedFile(
-                                msg_force_boundaries(i + 1, 0, ns.default_max_fct_angles_opti_f2,
-                                                     "-max_fct_angles_f2"))
+                                msg_force_boundaries(
+                                    i + 1,
+                                    0,
+                                    ns.default_max_fct_angles_opti_f2,
+                                    "-max_fct_angles_f2",
+                                )
+                            )
 
                 elif section_read["dihedral"]:
 
                     # beginning of a new group
-                    if itp_lines[i - 1] == "" or itp_lines[i - 1].startswith(";") or bool(
-                            re.search(r"\[.*dihedral.*\]", itp_lines[i - 1])):
+                    if (
+                        itp_lines[i - 1] == ""
+                        or itp_lines[i - 1].startswith(";")
+                        or bool(re.search(r"\[.*dihedral.*\]", itp_lines[i - 1]))
+                    ):
                         nb_dihedrals += 1
                         if itp_lines[i - 1].startswith("; dihedral type"):
                             geom_type = itp_lines[i - 1].split()[
-                                3]  # if the current CG ITP was generated with our package
+                                3
+                            ]  # if the current CG ITP was generated with our package
                         else:
                             geom_type = str(len(cg_itp["dihedral"]) + 1)
                         cg_itp["dihedral"].append(
-                            {"geom_type": geom_type, "beads": [], "func": [], "value": [],
-                             "value_user": [], "fct": [], "fct_user": [],
-                             "mult": []})  # initialize storage for this new group
+                            {
+                                "geom_type": geom_type,
+                                "beads": [],
+                                "func": [],
+                                "value": [],
+                                "value_user": [],
+                                "fct": [],
+                                "fct_user": [],
+                                "mult": [],
+                            }
+                        )  # initialize storage for this new group
 
                     try:
                         cg_itp["dihedral"][nb_dihedrals]["beads"].append(
-                            [int(bead_id) - 1 for bead_id in sp_itp_line[
-                                                             0:4]])  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
+                            [int(bead_id) - 1 for bead_id in sp_itp_line[0:4]]
+                        )  # retrieve indexing from 0 for CG beads IDS for MDAnalysis
                     except ValueError:
                         msg = (
                             "Incorrect reading of the CG ITP file within [dihedrals] section.\n"
@@ -396,35 +499,59 @@ def read_cg_itp_file(ns):
 
                     func = verify_handled_functions("dihedral", sp_itp_line[4], i + 1)
                     cg_itp["dihedral"][nb_dihedrals]["func"].append(func)
-                    cg_itp["dihedral"][nb_dihedrals]["value"].append(float(
-                        sp_itp_line[5]))  # issue happens here for functions that are not handled
+                    cg_itp["dihedral"][nb_dihedrals]["value"].append(
+                        float(sp_itp_line[5])
+                    )  # issue happens here for functions that are not handled
                     cg_itp["dihedral"][nb_dihedrals]["value_user"].append(
-                        float(sp_itp_line[5]))
-                    cg_itp["dihedral"][nb_dihedrals]["fct"].append(float(sp_itp_line[6]))
-                    cg_itp["dihedral"][nb_dihedrals]["fct_user"].append(float(sp_itp_line[6]))
+                        float(sp_itp_line[5])
+                    )
+                    cg_itp["dihedral"][nb_dihedrals]["fct"].append(
+                        float(sp_itp_line[6])
+                    )
+                    cg_itp["dihedral"][nb_dihedrals]["fct_user"].append(
+                        float(sp_itp_line[6])
+                    )
 
                     if ns.user_input:
-                        if func in config.dihedral_func_with_mult and not -ns.default_abs_range_fct_dihedrals_opti_func_with_mult <= float(
-                                sp_itp_line[
-                                    6]) <= ns.default_abs_range_fct_dihedrals_opti_func_with_mult:
-                            raise exceptions.MissformattedFile(msg_force_boundaries(i + 1,
-                                                                                    -ns.default_abs_range_fct_dihedrals_opti_func_with_mult,
-                                                                                    ns.default_abs_range_fct_dihedrals_opti_func_with_mult,
-                                                                                    "-max_fct_dihedrals_f149"))
-                        elif func == 2 and not -ns.default_abs_range_fct_dihedrals_opti_func_without_mult <= float(
-                                sp_itp_line[
-                                    6]) <= ns.default_abs_range_fct_dihedrals_opti_func_without_mult:
-                            raise exceptions.MissformattedFile(msg_force_boundaries(i + 1,
-                                                                                    -ns.default_abs_range_fct_dihedrals_opti_func_without_mult,
-                                                                                    ns.default_abs_range_fct_dihedrals_opti_func_without_mult,
-                                                                                    "-max_fct_dihedrals_f2"))
+                        if (
+                            func in config.dihedral_func_with_mult
+                            and not -ns.default_abs_range_fct_dihedrals_opti_func_with_mult
+                            <= float(sp_itp_line[6])
+                            <= ns.default_abs_range_fct_dihedrals_opti_func_with_mult
+                        ):
+                            raise exceptions.MissformattedFile(
+                                msg_force_boundaries(
+                                    i + 1,
+                                    -ns.default_abs_range_fct_dihedrals_opti_func_with_mult,
+                                    ns.default_abs_range_fct_dihedrals_opti_func_with_mult,
+                                    "-max_fct_dihedrals_f149",
+                                )
+                            )
+                        elif (
+                            func == 2
+                            and not -ns.default_abs_range_fct_dihedrals_opti_func_without_mult
+                            <= float(sp_itp_line[6])
+                            <= ns.default_abs_range_fct_dihedrals_opti_func_without_mult
+                        ):
+                            raise exceptions.MissformattedFile(
+                                msg_force_boundaries(
+                                    i + 1,
+                                    -ns.default_abs_range_fct_dihedrals_opti_func_without_mult,
+                                    ns.default_abs_range_fct_dihedrals_opti_func_without_mult,
+                                    "-max_fct_dihedrals_f2",
+                                )
+                            )
 
                     # handle multiplicity if function assumes multiplicity
                     if func in config.dihedral_func_with_mult:
                         try:
                             cg_itp["dihedral"][nb_dihedrals]["mult"].append(
-                                int(sp_itp_line[7]))
-                        except (IndexError, ValueError):  # incorrect read of multiplicity
+                                int(sp_itp_line[7])
+                            )
+                        except (
+                            IndexError,
+                            ValueError,
+                        ):  # incorrect read of multiplicity
                             msg = f"Incorrect read of multiplicity in dihedral with potential function {func} at ITP line {i + 1}."
                             raise exceptions.MissformattedFile(msg)
                     else:  # no multiplicity parameter is expected
@@ -436,14 +563,19 @@ def read_cg_itp_file(ns):
                     bead_id = int(sp_itp_line[0]) - 1
                     vs_def_beads_ids = [int(bid) - 1 for bid in sp_itp_line[1:3]]
                     func = sp_itp_line[
-                        3]  # will be casted to int in the verification below (for factorizing checks)
-                    func = vs_error_control(cg_itp, bead_id, vs_type, func, i + 1,
-                                            vs_def_beads_ids)  # i is the line number
+                        3
+                    ]  # will be casted to int in the verification below (for factorizing checks)
+                    func = vs_error_control(
+                        cg_itp, bead_id, vs_type, func, i + 1, vs_def_beads_ids
+                    )  # i is the line number
                     vs_params = float(sp_itp_line[4])
                     cg_itp["atoms"][bead_id]["vs_type"] = vs_type
-                    cg_itp["virtual_sites2"][bead_id] = {"bead_id": bead_id, "func": func,
-                                                         "vs_def_beads_ids": vs_def_beads_ids,
-                                                         "vs_params": vs_params}
+                    cg_itp["virtual_sites2"][bead_id] = {
+                        "bead_id": bead_id,
+                        "func": func,
+                        "vs_def_beads_ids": vs_def_beads_ids,
+                        "vs_params": vs_params,
+                    }
 
                 elif section_read["vs_3"]:
 
@@ -451,17 +583,22 @@ def read_cg_itp_file(ns):
                     bead_id = int(sp_itp_line[0]) - 1
                     vs_def_beads_ids = [int(bid) - 1 for bid in sp_itp_line[1:4]]
                     func = sp_itp_line[
-                        4]  # will be casted to int in the verification below (for factorizing checks)
-                    func = vs_error_control(cg_itp, bead_id, vs_type, func, i + 1,
-                                            vs_def_beads_ids)  # i is the line number
+                        4
+                    ]  # will be casted to int in the verification below (for factorizing checks)
+                    func = vs_error_control(
+                        cg_itp, bead_id, vs_type, func, i + 1, vs_def_beads_ids
+                    )  # i is the line number
                     if func in [1, 2, 3]:
                         vs_params = [float(param) for param in sp_itp_line[5:7]]
                     elif func == 4:
                         vs_params = [float(param) for param in sp_itp_line[5:8]]
                     cg_itp["atoms"][bead_id]["vs_type"] = vs_type
-                    cg_itp["virtual_sites3"][bead_id] = {"bead_id": bead_id, "func": func,
-                                                         "vs_def_beads_ids": vs_def_beads_ids,
-                                                         "vs_params": vs_params}
+                    cg_itp["virtual_sites3"][bead_id] = {
+                        "bead_id": bead_id,
+                        "func": func,
+                        "vs_def_beads_ids": vs_def_beads_ids,
+                        "vs_params": vs_params,
+                    }
 
                 elif section_read["vs_4"]:
 
@@ -469,42 +606,59 @@ def read_cg_itp_file(ns):
                     bead_id = int(sp_itp_line[0]) - 1
                     vs_def_beads_ids = [int(bid) - 1 for bid in sp_itp_line[1:5]]
                     func = sp_itp_line[
-                        5]  # will be casted to int in the verification below (for factorizing checks)
-                    func = vs_error_control(cg_itp, bead_id, vs_type, func, i + 1,
-                                            vs_def_beads_ids)  # i is the line number
+                        5
+                    ]  # will be casted to int in the verification below (for factorizing checks)
+                    func = vs_error_control(
+                        cg_itp, bead_id, vs_type, func, i + 1, vs_def_beads_ids
+                    )  # i is the line number
                     vs_params = [float(param) for param in sp_itp_line[6:9]]
                     cg_itp["atoms"][bead_id]["vs_type"] = vs_type
-                    cg_itp["virtual_sites4"][bead_id] = {"bead_id": bead_id, "func": func,
-                                                         "vs_def_beads_ids": vs_def_beads_ids,
-                                                         "vs_params": vs_params}
+                    cg_itp["virtual_sites4"][bead_id] = {
+                        "bead_id": bead_id,
+                        "func": func,
+                        "vs_def_beads_ids": vs_def_beads_ids,
+                        "vs_params": vs_params,
+                    }
 
                 elif section_read["vs_n"]:
 
                     vs_type = "n"
                     bead_id = int(sp_itp_line[0]) - 1
                     func = sp_itp_line[
-                        1]  # will be casted to int in verification below (for factorizing checks)
+                        1
+                    ]  # will be casted to int in verification below (for factorizing checks)
                     # here we do the check in 2 steps, because the reading of beads_ids depends on the function
-                    func = vs_error_control(cg_itp, bead_id, vs_type, func, i + 1,
-                                            vs_def_beads_ids=None)  # i is the line number
+                    func = vs_error_control(
+                        cg_itp, bead_id, vs_type, func, i + 1, vs_def_beads_ids=None
+                    )  # i is the line number
                     if func == 3:
-                        vs_def_beads_ids = [int(sp_itp_line[2:][i]) - 1 for i in
-                                            range(0, len(sp_itp_line[2:]), 2)]
-                        vs_params = [float(sp_itp_line[2:][i]) for i in
-                                     range(1, len(sp_itp_line[2:]), 2)]
+                        vs_def_beads_ids = [
+                            int(sp_itp_line[2:][i]) - 1
+                            for i in range(0, len(sp_itp_line[2:]), 2)
+                        ]
+                        vs_params = [
+                            float(sp_itp_line[2:][i])
+                            for i in range(1, len(sp_itp_line[2:]), 2)
+                        ]
                     else:
                         vs_def_beads_ids = [int(bid) - 1 for bid in sp_itp_line[2:]]
                         vs_params = None
-                    func = vs_error_control(cg_itp, bead_id, vs_type, func, i + 1,
-                                            vs_def_beads_ids)  # i is the line number
+                    func = vs_error_control(
+                        cg_itp, bead_id, vs_type, func, i + 1, vs_def_beads_ids
+                    )  # i is the line number
                     cg_itp["atoms"][bead_id]["vs_type"] = vs_type
-                    cg_itp["virtual_sitesn"][bead_id] = {"bead_id": bead_id, "func": func,
-                                                         "vs_def_beads_ids": vs_def_beads_ids,
-                                                         "vs_params": vs_params}
+                    cg_itp["virtual_sitesn"][bead_id] = {
+                        "bead_id": bead_id,
+                        "func": func,
+                        "vs_def_beads_ids": vs_def_beads_ids,
+                        "vs_params": vs_params,
+                    }
 
                 elif section_read["exclusion"]:
 
-                    cg_itp["exclusion"].append([int(bead_id) - 1 for bead_id in sp_itp_line])
+                    cg_itp["exclusion"].append(
+                        [int(bead_id) - 1 for bead_id in sp_itp_line]
+                    )
 
     # error handling, verify that funct, value and fct are all identical within the group, as they should be, and reduce arrays to single elements
     # TODO: make these messages more clear and CORRECT for the dihedral function handling -- also explain this is the current Opti.CG implementation, function 9 might come in next version

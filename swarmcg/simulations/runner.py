@@ -88,14 +88,14 @@ class SimulationStep:
     def _run_prep(self, cmd):
         with subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE,
                               stderr=subprocess.PIPE) as gmx_process:
-            _ = gmx_process.communicate()[1].decode()
+            stderr = gmx_process.communicate()[1].decode()
             gmx_process.kill()
 
         if gmx_process.returncode == 0:
             return self
         else:
-            msg = (
-                f"Gromacs grompp failed at MD {self.step_name} step, see its error message above. "
+            msg = stderr + (
+                f"\nGromacs grompp failed at MD {self.step_name} step, see its error message above. "
                 f"You may also want to check the parameters of the MDP file provided through "
                 f"argument -{self.swarmcg_flag}. If you think this is a bug, please consider opening "
                 f"an issue on GitHub at {config.github_url}/issues."
